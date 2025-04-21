@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.krzychna33.expensemanager.data.entity.Expense
+import dev.krzychna33.expensemanager.ui.repository.ExpensesRepository
 import dev.krzychna33.expensemanager.utils.ResourceState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -16,11 +18,15 @@ import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
-class ExpensesViewModel @Inject() constructor()  : ViewModel() {
+class ExpensesViewModel @Inject() constructor(private val expensesRepository: ExpensesRepository) :
+    ViewModel() {
 
     private val _expenses: MutableStateFlow<ResourceState<List<Expense>>> =
         MutableStateFlow(ResourceState.Loading())
     val expenses: StateFlow<ResourceState<List<Expense>>> = _expenses
+
+    private val _addExpenseResult = MutableStateFlow<ResourceState<String>>(ResourceState.Loading())
+    val addExpenseResult: StateFlow<ResourceState<String>> = _addExpenseResult
 
 
     init {
@@ -30,35 +36,33 @@ class ExpensesViewModel @Inject() constructor()  : ViewModel() {
 
     private fun getExpenses() {
         viewModelScope.launch(Dispatchers.IO) {
-            // Simulate a network call
+            expensesRepository.getExpenses().collectLatest {
+                Log.d("ExpensesViewModel", "Inside getExpenses collectLatest")
+                _expenses.value = it
+            }
+        }
+    }
 
+    fun addExpense(name: String, amount: Double, category: String) {
+        viewModelScope.launch(Dispatchers.IO) {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
             val currentDateTime = dateFormat.format(Date())
 
-            val expenses = listOf(
-                Expense(
-                    id = 1,
-                    amount = 100.0,
-                    category = "Groceries",
-                    name = "Shopping",
-                    date = currentDateTime
-                ),
-                Expense(
-                    id = 2,
-                    amount = 50.0,
-                    category = "Transport",
-                    name = "Tram ticket",
-                    date = currentDateTime
-                ),
-                Expense(
-                    id = 3,
-                    amount = 200.0,
-                    category = "Rent",
-                    name = "rent",
-                    date = currentDateTime
-                )
+            val newExpense = Expense(
+                id = "", // ID will be assigned by Firestore
+                name = name,
+                amount = amount,
+                category = category,
+                date = currentDateTime
             )
-            _expenses.value = ResourceState.Success(expenses)
+
+            expensesRepository.addExpense(newExpense).collectLatest { result ->
+                _addExpenseResult.value = result
+                if (result is ResourceState.Success) {
+                    // Refresh expenses list after successful addition
+                    getExpenses()
+                }
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     kotlin("kapt")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -73,6 +74,9 @@ dependencies {
     implementation(Dependencies.coroutinesCore)
     implementation(Dependencies.coroutinesAndroid)
     implementation(Dependencies.splashScreen)
+
+    implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
+    implementation("com.google.firebase:firebase-firestore")
 }
 
 kapt {

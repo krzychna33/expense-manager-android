@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dev.krzychna33.news2.ui.screens.HomeScreen
+import dev.krzychna33.expensemanager.ui.screens.HomeScreen
 
 @Composable
 fun AppNavigationGraph() {
