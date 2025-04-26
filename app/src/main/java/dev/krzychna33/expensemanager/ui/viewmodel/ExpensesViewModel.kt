@@ -49,7 +49,7 @@ class ExpensesViewModel @Inject() constructor(private val expensesRepository: Ex
             val currentDateTime = dateFormat.format(Date())
 
             val newExpense = Expense(
-                id = "", // ID will be assigned by Firestore
+                id = "",
                 name = name,
                 amount = amount,
                 category = category,
@@ -59,7 +59,6 @@ class ExpensesViewModel @Inject() constructor(private val expensesRepository: Ex
             expensesRepository.addExpense(newExpense).collectLatest { result ->
                 _addExpenseResult.value = result
                 if (result is ResourceState.Success) {
-                    // Refresh expenses list after successful addition
                     getExpenses()
                 }
             }

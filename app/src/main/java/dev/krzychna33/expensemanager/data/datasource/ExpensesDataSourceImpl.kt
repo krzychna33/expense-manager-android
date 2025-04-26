@@ -2,6 +2,7 @@ package dev.krzychna33.expensemanager.data.datasource
 
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import dev.krzychna33.expensemanager.data.entity.Expense
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
@@ -15,8 +16,10 @@ const val TAG = "ExpensesDataSourceImpl"
 
 class ExpensesDataSourceImpl @Inject() constructor(private val firestore: FirebaseFirestore) :
     ExpensesDataSource {
+
     override suspend fun getExpenses(): List<Expense> = suspendCancellableCoroutine { cont ->
         firestore.collection("expenses")
+            .orderBy("date", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { result ->
                 var expenses = emptyList<Expense>()
