@@ -75,8 +75,10 @@ dependencies {
     implementation(Dependencies.coroutinesAndroid)
     implementation(Dependencies.splashScreen)
 
-    implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
-    implementation("com.google.firebase:firebase-firestore")
+    implementation(platform(Dependencies.firebaseBom))
+    implementation(Dependencies.firebaseFirestore)
+
+    implementation(Dependencies.datastore)
 }
 
 kapt {

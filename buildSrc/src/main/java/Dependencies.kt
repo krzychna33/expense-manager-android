@@ -31,6 +31,11 @@ object Dependencies {
     val coroutinesAndroid by lazy { "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.coroutines}" }
 
     val splashScreen by lazy { "androidx.core:core-splashscreen:${Versions.splashScreen}" }
+
+    val firebaseBom by lazy { "com.google.firebase:firebase-bom:${Versions.firebaseBom}" }
+    val firebaseFirestore by lazy { "com.google.firebase:firebase-firestore" }
+
+    val datastore by lazy { "androidx.datastore:datastore-preferences:${Versions.datastore}" }
 }
 
 object Modules {

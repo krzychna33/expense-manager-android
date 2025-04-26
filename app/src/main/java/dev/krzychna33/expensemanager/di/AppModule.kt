@@ -1,15 +1,22 @@
 package dev.krzychna33.news2.di
 
+import android.content.Context
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dev.krzychna33.expensemanager.data.datasource.AuthDataSource
+import dev.krzychna33.expensemanager.data.datasource.AuthDataSourceImpl
 import dev.krzychna33.expensemanager.data.datasource.ExpensesDataSource
 import dev.krzychna33.expensemanager.data.datasource.ExpensesDataSourceImpl
+import dev.krzychna33.expensemanager.data.local.TokenManager
+import dev.krzychna33.expensemanager.data.local.TokenManagerImpl
 import dev.krzychna33.expensemanager.ui.repository.ExpensesRepository
+import dev.krzychna33.expensemanager.ui.repository.AuthRepository
 import javax.inject.Singleton
 
 @Module
@@ -34,4 +41,24 @@ class AppModule {
         return ExpensesRepository(expensesDataSource)
     }
 
+    @Provides
+    @Singleton
+    fun providesAuthDataSource(): AuthDataSource {
+        return AuthDataSourceImpl()
+    }
+
+    @Provides
+    @Singleton
+    fun providesTokenManager(@ApplicationContext context: Context): TokenManager {
+        return TokenManagerImpl(context)
+    }
+
+    @Provides
+    @Singleton
+    fun providesAuthRepository(
+        authDataSource: AuthDataSource,
+        tokenManager: TokenManager
+    ): AuthRepository {
+        return AuthRepository(authDataSource, tokenManager)
+    }
 }
