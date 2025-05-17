@@ -1,6 +1,7 @@
 package dev.krzychna33.expensemanager.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -18,6 +19,7 @@ object Routes {
     const val LOGIN_SCREEN = "login"
     const val HOME_SCREEN = "home"
     const val ADD_EXPENSE_SCREEN = "add_expense"
+    const val SIGN_UP_SCREEN = "sign_up" // Added sign up route
 }
 
 @Composable
@@ -29,6 +31,12 @@ fun AppNavigationGraph() {
 
     val startDestination = if (isLoggedIn) Routes.HOME_SCREEN else Routes.LOGIN_SCREEN
 
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            expensesViewModel.getExpenses()
+        }
+    }
+
     NavHost(navController = navController, startDestination = startDestination) {
         composable(Routes.LOGIN_SCREEN) {
             LoginScreen(
@@ -36,6 +44,9 @@ fun AppNavigationGraph() {
                     navController.navigate(Routes.HOME_SCREEN) {
                         popUpTo(Routes.LOGIN_SCREEN) { inclusive = true }
                     }
+                },
+                navigateToSignUp = {
+                    navController.navigate(Routes.SIGN_UP_SCREEN)
                 }
             )
         }
@@ -43,6 +54,7 @@ fun AppNavigationGraph() {
         composable(Routes.HOME_SCREEN) {
             HomeScreen(
                 expensesViewModel = expensesViewModel,
+                authViewModel = authViewModel,
                 logout = {
                     authViewModel.logout()
                     navController.navigate(Routes.LOGIN_SCREEN) {
@@ -51,7 +63,7 @@ fun AppNavigationGraph() {
                 },
                 onAddExpense = {
                     navController.navigate(Routes.ADD_EXPENSE_SCREEN)
-                }
+                },
             )
         }
 
@@ -66,6 +78,18 @@ fun AppNavigationGraph() {
                 }
             )
         }
+
+        composable(Routes.SIGN_UP_SCREEN) {
+            dev.krzychna33.expensemanager.ui.screens.SignUpScreen(
+                navigateToHome = {
+                    navController.navigate(Routes.HOME_SCREEN) {
+                        popUpTo(Routes.SIGN_UP_SCREEN) { inclusive = true }
+                    }
+                },
+                onBackToLogin = {
+                    navController.popBackStack(Routes.LOGIN_SCREEN, inclusive = false)
+                }
+            )
+        }
     }
 }
-

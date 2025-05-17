@@ -12,16 +12,7 @@ import javax.inject.Inject
 
 class AuthRepository @Inject constructor(
     private val authDataSource: AuthDataSource,
-    private val firebaseAuth: FirebaseAuth
 ) {
-    private val _authStateFlow = MutableStateFlow(firebaseAuth.currentUser != null)
-    val isLoggedIn: Flow<Boolean> = _authStateFlow.asStateFlow()
-
-    init {
-        firebaseAuth.addAuthStateListener { auth ->
-            _authStateFlow.value = auth.currentUser != null
-        }
-    }
 
     suspend fun login(email: String, password: String): Result<Boolean> {
         return try {
@@ -52,6 +43,18 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun getCurrentUser(): FirebaseUser? {
-        return firebaseAuth.currentUser
+        return authDataSource.getCurrentUser()
+    }
+
+    suspend fun signUp(email: String, password: String): Result<FirebaseUser> {
+        return try {
+            val result = authDataSource.signUp(email, password)
+            result.fold(
+                onSuccess = { Result.success(it) },
+                onFailure = { Result.failure(it) }
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

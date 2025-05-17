@@ -9,12 +9,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,12 +34,12 @@ import dev.krzychna33.news2.ui.theme.Typography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
+fun SignUpScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     navigateToHome: () -> Unit,
-    navigateToSignUp: () -> Unit
+    onBackToLogin: () -> Unit
 ) {
-    val loginState by authViewModel.loginState.collectAsState()
+    val signUpState by authViewModel.signUpState.collectAsState()
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState(initial = false)
 
     var email by remember { mutableStateOf("") }
@@ -59,7 +59,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Login",
+            text = "Sign Up",
             modifier = Modifier.padding(bottom = 32.dp),
             style = Typography.headlineLarge
         )
@@ -85,33 +85,36 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        when (loginState) {
+        when (signUpState) {
             is ResourceState.Idle -> {}
             is ResourceState.Loading -> {
                 CircularProgressIndicator()
             }
+
             is ResourceState.Error -> Text(
-                text = (loginState as ResourceState.Error<*>).error,
+                text = (signUpState as ResourceState.Error<*>).error,
             )
 
             is ResourceState.Success<*> -> {}
         }
 
         Button(
-            onClick = { authViewModel.login(email, password) },
+            onClick = { authViewModel.signUp(email, password) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Sign In")
+            Text("Sign Up")
         }
+
         Spacer(modifier = Modifier.height(8.dp))
+
         Button(
-            onClick = navigateToSignUp,
+            onClick = onBackToLogin,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.secondary
             ),
         ) {
-            Text("Sign Up")
+            Text("Back to Login")
         }
     }
 }

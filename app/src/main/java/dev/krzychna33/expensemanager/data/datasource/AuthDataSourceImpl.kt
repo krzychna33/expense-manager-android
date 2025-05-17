@@ -28,7 +28,6 @@ class AuthDataSourceImpl @Inject constructor(
     }
 
     override suspend fun login(email: String, password: String): Result<FirebaseUser> {
-        delay(1000)
         if (email.isNotEmpty() && password.isNotEmpty()) {
             val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             if (authResult.user != null) {
@@ -39,6 +38,19 @@ class AuthDataSourceImpl @Inject constructor(
         } else {
             return Result.failure(Exception("Password or email is empty"))
         }
+    }
+
+    override suspend fun signUp(email: String, password: String): Result<FirebaseUser> {
+        val signupResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+        return if (signupResult.user != null) {
+            Result.success(signupResult.user!!)
+        } else {
+            Result.failure(Exception("Sign up failed"))
+        }
+    }
+
+    override suspend fun getCurrentUser(): FirebaseUser? {
+        return firebaseAuth.currentUser
     }
 
 }

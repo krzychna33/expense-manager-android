@@ -67,6 +67,6 @@ class AppModule {
         authDataSource: AuthDataSource,
         firebaseAuth: FirebaseAuth
     ): AuthRepository {
-        return AuthRepository(authDataSource, firebaseAuth)
+        return AuthRepository(authDataSource)
     }
 }

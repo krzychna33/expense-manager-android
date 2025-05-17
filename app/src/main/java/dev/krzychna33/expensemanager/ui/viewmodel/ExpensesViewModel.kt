@@ -29,7 +29,7 @@ class ExpensesViewModel @Inject() constructor(
         MutableStateFlow(ResourceState.Loading())
     val expenses: StateFlow<ResourceState<List<Expense>>> = _expenses
 
-    private val _addExpenseResult = MutableStateFlow<ResourceState<String>>(ResourceState.Loading())
+    private val _addExpenseResult = MutableStateFlow<ResourceState<String>>(ResourceState.Idle())
     val addExpenseResult: StateFlow<ResourceState<String>> = _addExpenseResult
 
     private val _distinctCategories =
@@ -44,7 +44,11 @@ class ExpensesViewModel @Inject() constructor(
     public fun getExpenses() {
         viewModelScope.launch(Dispatchers.IO) {
             val userId = authRepository.getCurrentUser()?.uid
-                ?: throw IllegalStateException("User ID is null")
+
+            if (userId == null) {
+                _expenses.value = ResourceState.Error("User ID is null")
+                return@launch
+            }
 
             expensesRepository.getExpenses(userId).collectLatest {
                 Log.d("ExpensesViewModel", "Inside getExpenses collectLatest")
@@ -125,6 +129,12 @@ class ExpensesViewModel @Inject() constructor(
 
     fun resetAddExpenseResult() {
         _addExpenseResult.value = ResourceState.Loading()
+    }
+
+    fun cleanUp() {
+        _addExpenseResult.value = ResourceState.Idle()
+        _expenses.value = ResourceState.Idle()
+        _distinctCategories.value = ResourceState.Idle()
     }
 }
 
