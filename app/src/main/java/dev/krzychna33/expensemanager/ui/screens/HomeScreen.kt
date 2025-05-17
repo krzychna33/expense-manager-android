@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.DropdownMenuItem
@@ -91,6 +92,10 @@ fun HomeScreen(
                             fabMenuExpanded.value = false
                             onAddExpense()
                         }, leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) })
+                        DropdownMenuItem(text = { Text("Refresh") }, onClick = {
+                            fabMenuExpanded.value = false
+                            expensesViewModel.getExpenses()
+                        }, leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = null) })
                         DropdownMenuItem(text = { Text("Logout") }, onClick = {
                             fabMenuExpanded.value = false
                             logout()
