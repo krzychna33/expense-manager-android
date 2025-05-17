@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
-import dev.krzychna33.news2.ui.navigation.AppNavigationGraph
+import dev.krzychna33.expensemanager.ui.navigation.AppNavigationGraph
 import dev.krzychna33.news2.ui.theme.ExpenseManagerTheme
 
 @AndroidEntryPoint

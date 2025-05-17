@@ -1,7 +1,10 @@
 package dev.krzychna33.expensemanager.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,20 +15,32 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.Icon
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
@@ -33,177 +48,117 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.krzychna33.expensemanager.data.entity.Expense
 import dev.krzychna33.expensemanager.ui.components.ExpenseItem
+import dev.krzychna33.expensemanager.ui.components.FilterChipsRow
 import dev.krzychna33.expensemanager.ui.components.TotalExpensesSummary
 import dev.krzychna33.expensemanager.ui.viewmodel.ExpensesViewModel
 import dev.krzychna33.expensemanager.utils.ResourceState
 
 const val TAG = "HomeScreen"
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable()
-fun HomeScreen(expensesViewModel: ExpensesViewModel = hiltViewModel(), logout: () -> Unit) {
+fun HomeScreen(
+    expensesViewModel: ExpensesViewModel = hiltViewModel(),
+    logout: () -> Unit,
+    onAddExpense: () -> Unit
+) {
     val expensesState by expensesViewModel.expenses.collectAsState()
-    val addExpenseState by expensesViewModel.addExpenseResult.collectAsState()
+    val distinctCategoriesState by expensesViewModel.distinctCategories.collectAsState()
+    val fabMenuExpanded = remember { mutableStateOf(false) }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
 
-    var expenseName by remember { mutableStateOf("") }
-    var expenseAmount by remember { mutableStateOf("") }
-    var expenseCategory by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Make the content area scrollable
+    Scaffold(
+        floatingActionButton = {
+            Box(contentAlignment = Alignment.BottomEnd) {
+                FloatingActionButton(onClick = { fabMenuExpanded.value = !fabMenuExpanded.value }) {
+                    Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                }
+                DropdownMenu(
+                    expanded = fabMenuExpanded.value,
+                    onDismissRequest = { fabMenuExpanded.value = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Add Expense") },
+                        onClick = {
+                            fabMenuExpanded.value = false
+                            onAddExpense()
+                        },
+                        leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Logout") },
+                        onClick = {
+                            fabMenuExpanded.value = false
+                            logout()
+                        },
+                        leadingIcon = { Icon(Icons.Filled.ExitToApp, contentDescription = null) }
+                    )
+                }
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End
+    ) { innerPadding ->
         Column(
             modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            when (expensesState) {
-                is ResourceState.Loading -> {
-                    Text("Loading expenses...")
-                }
-                is ResourceState.Success -> {
-                    Text(text = "Your expenses:")
-                    val expenses = (expensesState as ResourceState.Success<List<Expense>>).data
+            if (distinctCategoriesState is ResourceState.Success) {
+                FilterChipsRow(
+                    categories = (distinctCategoriesState as ResourceState.Success<List<String>>).data,
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = {
+                        selectedCategory = it
+                    }
+                )
+            }
 
-                    // Display each expense directly in the scrollable column
-                    expenses.forEachIndexed { index, expense ->
-                        ExpenseItem(expense = expense, index = index)
+            // Make the content area scrollable
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                when (expensesState) {
+                    is ResourceState.Loading -> {
+                        Text("Loading expenses...")
                     }
 
-                    // Add the TotalExpensesSummary component
+                    is ResourceState.Success -> {
+                        Text(text = "Your expenses:")
+                        val expenses = (expensesState as ResourceState.Success<List<Expense>>).data
+                        val filteredExpenses = selectedCategory?.let { cat ->
+                            expenses.filter { it.category == cat }
+                        } ?: expenses
+                        filteredExpenses.forEachIndexed { index, expense ->
+                            ExpenseItem(
+                                expense = expense,
+                                index = index,
+                                onRemove = { expensesViewModel.removeExpense(it) }
+                            )
+                        }
+                    }
+
+                    is ResourceState.Error -> {
+                        Text(text = "Error loading expenses")
+                    }
+
+                    else -> {}
                 }
-                is ResourceState.Error -> {
-                    Text(text = "Error loading expenses")
-                }
-                else -> {}
             }
-
-            // Show add expense result feedback
-            when (addExpenseState) {
-                is ResourceState.Success -> {
-                    Text(text = "Expense added successfully!")
-                }
-                is ResourceState.Error -> {
-                    Text(text = "Error: ${(addExpenseState as ResourceState.Error).error}")
-                }
-                else -> {}
-            }
-        }
-
-        // Input fields and Add Expense button (fixed at bottom)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-        ) {
-
+            // Summary only
             if (expensesState is ResourceState.Success) {
                 val expenses = (expensesState as ResourceState.Success<List<Expense>>).data
-                TotalExpensesSummary(expenses = expenses)
-            }
-
-            OutlinedTextField(
-                value = expenseName,
-                onValueChange = { expenseName = it },
-                label = { Text("Expense Name") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = expenseAmount,
-                onValueChange = { newValue ->
-                    // Regex to match numbers with up to 2 decimal places
-                    val pattern = Regex("^\\d*(\\.\\d{0,2})?\$")
-                    if (newValue.isEmpty() || pattern.matches(newValue)) {
-                        expenseAmount = newValue
-                    }
-                },
-                label = { Text("Amount") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Replace the current OutlinedTextField with this implementation
-            var expanded by remember { mutableStateOf(false) }
-            val categories = expensesState.let {
-                if (it is ResourceState.Success) {
-                    it.data.map { expense -> expense.category }.distinct() + listOf("Default")
-                } else {
-                    listOf("Default")
-                }
-            }
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = expenseCategory,
-                    onValueChange = { expenseCategory = it },
-                    label = { Text("Category") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    }
-                )
-
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    categories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category) },
-                            onClick = {
-                                expenseCategory = category
-                                expanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    val amount = expenseAmount.toDoubleOrNull() ?: 0.0
-                    expensesViewModel.addExpense(expenseName, amount, expenseCategory)
-                    // Clear fields after submission
-                    expenseName = ""
-                    expenseAmount = ""
-                    expenseCategory = ""
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Add Expense")
-            }
-
-            Button(
-                onClick = {
-                    logout()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = buttonColors(
-                    containerColor = Color.Gray
-                )
-            ) {
-                Text("Logout")
+                val filteredExpenses = selectedCategory?.let { cat ->
+                    expenses.filter { it.category == cat }
+                } ?: expenses
+                TotalExpensesSummary(expenses = filteredExpenses)
             }
         }
     }
 }
-
-
 

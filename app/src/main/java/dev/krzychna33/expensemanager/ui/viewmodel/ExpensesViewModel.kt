@@ -32,13 +32,16 @@ class ExpensesViewModel @Inject() constructor(
     private val _addExpenseResult = MutableStateFlow<ResourceState<String>>(ResourceState.Loading())
     val addExpenseResult: StateFlow<ResourceState<String>> = _addExpenseResult
 
+    private val _distinctCategories =
+        MutableStateFlow<ResourceState<List<String>>>(ResourceState.Loading())
+    val distinctCategories: StateFlow<ResourceState<List<String>>> = _distinctCategories
 
     init {
         Log.d("NewsViewModel", "Inside NewsViewModel init")
         getExpenses()
     }
 
-    private fun getExpenses() {
+    public fun getExpenses() {
         viewModelScope.launch(Dispatchers.IO) {
             val userId = authRepository.getCurrentUser()?.uid
                 ?: throw IllegalStateException("User ID is null")
@@ -46,6 +49,15 @@ class ExpensesViewModel @Inject() constructor(
             expensesRepository.getExpenses(userId).collectLatest {
                 Log.d("ExpensesViewModel", "Inside getExpenses collectLatest")
                 _expenses.value = it
+
+                if (it is ResourceState.Success) {
+                    val distinctCategories = it.data?.map { expense -> expense.category }
+                        ?.distinct()
+                        ?: emptyList()
+                    _distinctCategories.value = ResourceState.Success(distinctCategories)
+                } else {
+                    _distinctCategories.value = ResourceState.Error("Failed to fetch categories")
+                }
             }
         }
     }
@@ -100,4 +112,19 @@ class ExpensesViewModel @Inject() constructor(
             }
         }
     }
+
+    fun removeExpense(expense: Expense) {
+        viewModelScope.launch(Dispatchers.IO) {
+            expensesRepository.removeExpense(expense).collectLatest { result ->
+                if (result is ResourceState.Success) {
+                    getExpenses()
+                }
+            }
+        }
+    }
+
+    fun resetAddExpenseResult() {
+        _addExpenseResult.value = ResourceState.Loading()
+    }
 }
+

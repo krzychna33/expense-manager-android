@@ -68,4 +68,20 @@ class ExpensesDataSourceImpl @Inject() constructor(private val firestore: Fireba
                 cont.resumeWithException(exception)
             }
     }
+
+    override suspend fun removeExpense(expense: Expense): String {
+        return suspendCancellableCoroutine { cont ->
+            firestore.collection("expenses")
+                .document(expense.id)
+                .delete()
+                .addOnSuccessListener {
+                    Log.d(TAG, "Expense removed with ID: ${expense.id}")
+                    cont.resume(expense.id, null)
+                }
+                .addOnFailureListener { exception ->
+                    Log.w(TAG, "Error removing expense", exception)
+                    cont.resumeWithException(exception)
+                }
+        }
+    }
 }

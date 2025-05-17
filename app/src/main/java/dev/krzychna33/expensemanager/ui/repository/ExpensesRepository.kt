@@ -34,4 +34,15 @@ class ExpensesRepository @Inject constructor(private val expensesDataSource: Exp
             emit(ResourceState.Error(e.message ?: "Unknown error occurred"))
         }
     }
+
+    suspend fun removeExpense(expense: Expense): Flow<ResourceState<String>> = flow {
+        emit(ResourceState.Loading())
+        try {
+            val result = expensesDataSource.removeExpense(expense)
+            emit(ResourceState.Success(result))
+        } catch (e: Exception) {
+            emit(ResourceState.Error(e.message ?: "Unknown error occurred"))
+        }
+    }
 }
+
