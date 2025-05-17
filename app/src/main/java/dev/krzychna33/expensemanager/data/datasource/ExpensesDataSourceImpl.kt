@@ -17,8 +17,9 @@ const val TAG = "ExpensesDataSourceImpl"
 class ExpensesDataSourceImpl @Inject() constructor(private val firestore: FirebaseFirestore) :
     ExpensesDataSource {
 
-    override suspend fun getExpenses(): List<Expense> = suspendCancellableCoroutine { cont ->
+    override suspend fun getExpenses(userId: String): List<Expense> = suspendCancellableCoroutine { cont ->
         firestore.collection("expenses")
+            .whereEqualTo("userId", userId) // Replace with actual user ID
             .orderBy("date", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { result ->
@@ -32,6 +33,7 @@ class ExpensesDataSourceImpl @Inject() constructor(private val firestore: Fireba
                     expenses = expenses +
                             Expense(
                                 id = document.id,
+                                userId = document.getString("userId") ?: "",
                                 name = document.getString("name") ?: "",
                                 amount = document.getDouble("amount") ?: 0.0,
                                 date = document.getString("date") ?: currentDateTime,
@@ -48,6 +50,7 @@ class ExpensesDataSourceImpl @Inject() constructor(private val firestore: Fireba
 
     override suspend fun addExpense(expense: Expense): String = suspendCancellableCoroutine { cont ->
         val expenseData = hashMapOf(
+            "userId" to expense.userId,
             "name" to expense.name,
             "amount" to expense.amount,
             "date" to expense.date,

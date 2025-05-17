@@ -2,6 +2,7 @@ package dev.krzychna33.expensemanager.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.krzychna33.expensemanager.ui.repository.AuthRepository
 import dev.krzychna33.expensemanager.utils.ResourceState
@@ -12,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _loginState = MutableStateFlow<ResourceState<Boolean>>(ResourceState.Idle())

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.krzychna33.expensemanager.data.entity.Expense
+import dev.krzychna33.expensemanager.ui.repository.AuthRepository
 import dev.krzychna33.expensemanager.ui.repository.ExpensesRepository
 import dev.krzychna33.expensemanager.utils.ResourceState
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +19,10 @@ import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
-class ExpensesViewModel @Inject() constructor(private val expensesRepository: ExpensesRepository) :
+class ExpensesViewModel @Inject() constructor(
+    private val expensesRepository: ExpensesRepository,
+    private val authRepository: AuthRepository
+) :
     ViewModel() {
 
     private val _expenses: MutableStateFlow<ResourceState<List<Expense>>> =
@@ -36,20 +40,52 @@ class ExpensesViewModel @Inject() constructor(private val expensesRepository: Ex
 
     private fun getExpenses() {
         viewModelScope.launch(Dispatchers.IO) {
-            expensesRepository.getExpenses().collectLatest {
+            val userId = authRepository.getCurrentUser()?.uid
+                ?: throw IllegalStateException("User ID is null")
+
+            expensesRepository.getExpenses(userId).collectLatest {
                 Log.d("ExpensesViewModel", "Inside getExpenses collectLatest")
                 _expenses.value = it
             }
         }
     }
 
+    private fun validateExpense(
+        name: String,
+        amount: Double,
+        category: String
+    ): Boolean {
+        return when {
+            name.isBlank() -> {
+                _addExpenseResult.value = ResourceState.Error("Name cannot be empty")
+                false
+            }
+            amount <= 0 -> {
+                _addExpenseResult.value = ResourceState.Error("Amount must be greater than 0")
+                false
+            }
+            category.isBlank() -> {
+                _addExpenseResult.value = ResourceState.Error("Category cannot be empty")
+                false
+            }
+            else -> true
+        }
+    }
+
     fun addExpense(name: String, amount: Double, category: String) {
+        if (!validateExpense(name, amount, category)) {
+            return
+        }
         viewModelScope.launch(Dispatchers.IO) {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
             val currentDateTime = dateFormat.format(Date())
 
+            val userId = authRepository.getCurrentUser()?.uid
+                ?: throw IllegalStateException("User ID is null")
+
             val newExpense = Expense(
                 id = "",
+                userId,
                 name = name,
                 amount = amount,
                 category = category,

@@ -2,6 +2,7 @@ package dev.krzychna33.news2.di
 
 import android.content.Context
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import dagger.Module
@@ -41,10 +42,17 @@ class AppModule {
         return ExpensesRepository(expensesDataSource)
     }
 
+
     @Provides
     @Singleton
-    fun providesAuthDataSource(): AuthDataSource {
-        return AuthDataSourceImpl()
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun providesAuthDataSource(auth: FirebaseAuth): AuthDataSource {
+        return AuthDataSourceImpl(auth)
     }
 
     @Provides
@@ -57,8 +65,8 @@ class AppModule {
     @Singleton
     fun providesAuthRepository(
         authDataSource: AuthDataSource,
-        tokenManager: TokenManager
+        firebaseAuth: FirebaseAuth
     ): AuthRepository {
-        return AuthRepository(authDataSource, tokenManager)
+        return AuthRepository(authDataSource, firebaseAuth)
     }
 }

@@ -34,6 +34,7 @@ object Dependencies {
 
     val firebaseBom by lazy { "com.google.firebase:firebase-bom:${Versions.firebaseBom}" }
     val firebaseFirestore by lazy { "com.google.firebase:firebase-firestore" }
+    val firebaseAuth by lazy { "com.google.firebase:firebase-auth" }
 
     val datastore by lazy { "androidx.datastore:datastore-preferences:${Versions.datastore}" }
 }

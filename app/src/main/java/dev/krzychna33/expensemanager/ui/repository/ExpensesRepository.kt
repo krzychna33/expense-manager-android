@@ -13,11 +13,11 @@ const val TAG = "ExpensesRepository"
 
 class ExpensesRepository @Inject constructor(private val expensesDataSource: ExpensesDataSource) {
 
-    suspend fun getExpenses(): Flow<ResourceState<List<Expense>>> {
+    suspend fun getExpenses(userId: String): Flow<ResourceState<List<Expense>>> {
         Log.d(TAG, "Inside getExpenses")
         return flow {
             emit(ResourceState.Loading())
-            val response = expensesDataSource.getExpenses()
+            val response = expensesDataSource.getExpenses(userId)
             emit(ResourceState.Success(response))
         }.catch { e ->
             Log.d(TAG, "Error: ${e.message}")

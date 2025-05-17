@@ -77,6 +77,7 @@ dependencies {
 
     implementation(platform(Dependencies.firebaseBom))
     implementation(Dependencies.firebaseFirestore)
+    implementation(Dependencies.firebaseAuth)
 
     implementation(Dependencies.datastore)
 }

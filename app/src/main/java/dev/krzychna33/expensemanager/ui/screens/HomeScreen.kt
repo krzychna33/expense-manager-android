@@ -14,7 +14,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +32,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.krzychna33.expensemanager.data.entity.Expense
+import dev.krzychna33.expensemanager.ui.components.ExpenseItem
+import dev.krzychna33.expensemanager.ui.components.TotalExpensesSummary
 import dev.krzychna33.expensemanager.ui.viewmodel.ExpensesViewModel
 import dev.krzychna33.expensemanager.utils.ResourceState
 
@@ -61,7 +66,7 @@ fun HomeScreen(expensesViewModel: ExpensesViewModel = hiltViewModel(), logout: (
                     Text("Loading expenses...")
                 }
                 is ResourceState.Success -> {
-                    Text(text = "Expenses loaded successfully")
+                    Text(text = "Your expenses:")
                     val expenses = (expensesState as ResourceState.Success<List<Expense>>).data
 
                     // Display each expense directly in the scrollable column
@@ -112,7 +117,13 @@ fun HomeScreen(expensesViewModel: ExpensesViewModel = hiltViewModel(), logout: (
 
             OutlinedTextField(
                 value = expenseAmount,
-                onValueChange = { expenseAmount = it },
+                onValueChange = { newValue ->
+                    // Regex to match numbers with up to 2 decimal places
+                    val pattern = Regex("^\\d*(\\.\\d{0,2})?\$")
+                    if (newValue.isEmpty() || pattern.matches(newValue)) {
+                        expenseAmount = newValue
+                    }
+                },
                 label = { Text("Amount") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
@@ -120,12 +131,48 @@ fun HomeScreen(expensesViewModel: ExpensesViewModel = hiltViewModel(), logout: (
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = expenseCategory,
-                onValueChange = { expenseCategory = it },
-                label = { Text("Category") },
+            // Replace the current OutlinedTextField with this implementation
+            var expanded by remember { mutableStateOf(false) }
+            val categories = expensesState.let {
+                if (it is ResourceState.Success) {
+                    it.data.map { expense -> expense.category }.distinct() + listOf("Default")
+                } else {
+                    listOf("Default")
+                }
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
                 modifier = Modifier.fillMaxWidth()
-            )
+            ) {
+                OutlinedTextField(
+                    value = expenseCategory,
+                    onValueChange = { expenseCategory = it },
+                    label = { Text("Category") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    }
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    categories.forEach { category ->
+                        DropdownMenuItem(
+                            text = { Text(category) },
+                            onClick = {
+                                expenseCategory = category
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -158,35 +205,5 @@ fun HomeScreen(expensesViewModel: ExpensesViewModel = hiltViewModel(), logout: (
     }
 }
 
-@Composable
-fun ExpenseItem(expense: Expense, index: Int) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Text(
-            text = "${index + 1}. ${expense.name}",
-            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge
-        )
-        Text(
-            text = "Amount: $${expense.amount}",
-            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            text = "Category: ${expense.category}",
-            style = androidx.compose.material3.MaterialTheme.typography.bodySmall
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-    }
-}
 
-@Composable
-fun TotalExpensesSummary(expenses: List<Expense>) {
-    val totalAmount = expenses.sumOf { it.amount }
-    Text(
-        text = "Total Expenses: $${"%.2f".format(totalAmount)}",
-        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-        modifier = Modifier.padding(top = 16.dp)
-    )
-}
+
